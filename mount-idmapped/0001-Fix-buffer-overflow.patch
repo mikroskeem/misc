@@ -1,0 +1,33 @@
+From f5c4b0b4629edd071261eb9f3691b3617eda097b Mon Sep 17 00:00:00 2001
+From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Date: Thu, 30 Dec 2021 23:21:12 +0200
+Subject: [PATCH] Fix buffer overflow
+
+---
+ mount-idmapped.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/mount-idmapped.c b/mount-idmapped.c
+index 68ec31f..5dc99fa 100644
+--- a/mount-idmapped.c
++++ b/mount-idmapped.c
+@@ -434,13 +434,13 @@ static int write_id_mapping(idmap_type_t map_type, pid_t pid, const char *buf, s
+ {
+ 	__do_close int fd = -EBADF;
+ 	int ret;
+-	char path[STRLITERALLEN("/proc") + INTTYPE_TO_STRLEN(pid_t) +
+-		  STRLITERALLEN("/setgroups") + 1];
++	const size_t path_sz = STRLITERALLEN("/proc") + 1 + INTTYPE_TO_STRLEN(pid_t) + STRLITERALLEN("/setgroups") + 1;
++	char path[path_sz];
+ 
+ 	if (geteuid() != 0 && map_type == ID_TYPE_GID) {
+ 		__do_close int setgroups_fd = -EBADF;
+ 
+-		ret = snprintf(path, PATH_MAX, "/proc/%d/setgroups", pid);
++		ret = snprintf(path, sizeof(path), "/proc/%d/setgroups", pid);
+ 		if (ret < 0 || ret >= PATH_MAX)
+ 			return -E2BIG;
+ 
+-- 
+2.34.0
+
